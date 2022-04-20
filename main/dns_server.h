@@ -19,7 +19,7 @@ extern "C" {
  *
  */
 void start_dns_server(void);
-
+void stop_dns_server(void);
 
 #ifdef __cplusplus
 }

@@ -27,7 +27,7 @@
 #define ANS_TTL_SEC (300)
 
 static const char *TAG = "example_dns_redirect_server";
-
+int g_sock;
 // DNS Header Packet
 typedef struct __attribute__((__packed__))
 {
@@ -181,6 +181,7 @@ void dns_server_task(void *pvParameters)
         inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
 
         int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+        g_sock = sock;
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;

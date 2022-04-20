@@ -225,7 +225,8 @@ static esp_err_t http_server_favicon_ico_handler(httpd_req_t *req)
  * @return ESP_OK, otherwise ESP_FAIL if timeout occurs and the update cannot be started.
  */
 esp_err_t http_server_OTA_update_handler(httpd_req_t *req)
-{
+{ 
+	//stop_dns_server();
 	esp_ota_handle_t ota_handle;
 
 	char ota_buff[1024];
@@ -524,7 +525,7 @@ esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
     // Set status
     httpd_resp_set_status(req, "302 Temporary Redirect");
     // Redirect to the "/" root directory
-		httpd_resp_set_hdr(req, "Location", "http://www.allan.com");
+		httpd_resp_set_hdr(req, "Location", "http://www.glasbox.com");
 		httpd_resp_set_hdr(req,"Content-Location","/");
     // iOS requires content in the response to detect a captive portal, simply redirecting is not sufficient.
     httpd_resp_send(req, "Redirect to the captive portal", HTTPD_RESP_USE_STRLEN);
