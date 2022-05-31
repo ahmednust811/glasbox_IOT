@@ -42,7 +42,7 @@
  TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-
+ uint32_t count = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -459,8 +459,8 @@ void normal_state(uint8_t override) {
 					}
 
 				}
-				uart_buf_len = sprintf(uart_buf, "%lu count\r\n", count);
-				HAL_UART_Transmit(&huart1, &uart_buf, uart_buf_len + 1, 100);
+				//uart_buf_len = sprintf(uart_buf, "%lu count\r\n", count);
+				//HAL_UART_Transmit(&huart1, &uart_buf, uart_buf_len + 1, 100);
 
 				while (person_present('B') && (count < 503)) {
 					direction('O');
@@ -479,9 +479,9 @@ void normal_state(uint8_t override) {
 						}
 
 					}
-					uart_buf_len = sprintf(uart_buf, "%lu count\r\n", count);
-					HAL_UART_Transmit(&huart1, &uart_buf, uart_buf_len + 1,
-							100);
+					//uart_buf_len = sprintf(uart_buf, "%lu count\r\n", count);
+					//HAL_UART_Transmit(&huart1, &uart_buf, uart_buf_len + 1,
+						//	100);
 					//HAL_Delay(2000);
 					// if(!person_present('B'))
 					//{
@@ -505,7 +505,7 @@ void normal_state(uint8_t override) {
 
 			}
 		} else {
-			if (HAL_GPIO_ReadPin(button_motion_out_GPIO_Port, button_motion_Pin)) {
+			if (HAL_GPIO_ReadPin(button_motion_out_GPIO_Port, button_motion_out_Pin)) {
 				if (person_present('B')) {
 					if (actuator_state()) {
 						move_actuator('U');
@@ -640,8 +640,8 @@ void move_motor(uint8_t dir, uint8_t degree) {
 		}
 
 		//for(uint32_t i=0;i<10000;i++);
-		uart_buf_len = sprintf(uart_buf, "%lu count\r\n", count);
-		HAL_UART_Transmit(&huart1, &uart_buf, uart_buf_len + 1, 100);
+		//uart_buf_len = sprintf(uart_buf, "%lu count\r\n", count);
+		//HAL_UART_Transmit(&huart1, &uart_buf, uart_buf_len + 1, 100);
 
 	}
 
