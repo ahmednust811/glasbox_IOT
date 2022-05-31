@@ -113,7 +113,7 @@ int main(void)
   	/* Infinite loop */
   	/* USER CODE BEGIN WHILE */
   	while (1) {
-  		if (HAL_GPIO_ReadPin(GPIOD, remained_open_Pin)) {
+  		if (HAL_GPIO_ReadPin(door_sensor_GPIO_Port, door_sensor_Pin)) {
   			remained_open();
   		}
   		/* USER CODE END WHILE */
@@ -329,27 +329,27 @@ uint8_t person_present(uint8_t side) {
 
 	HAL_Delay(20);
 	if (side == 'F')
-		return HAL_GPIO_ReadPin(GPIOB, motion_sensor_Pin);
+		return HAL_GPIO_ReadPin(motion_out_GPIO_Port, motion_out_Pin);
 	else if (side == 'B')
-		return !HAL_GPIO_ReadPin(GPIOD, closing_motion_sensor_Pin);
+		return !HAL_GPIO_ReadPin(motion_in_GPIO_Port, motion_in_Pin);
 }
 
 void move_actuator(uint8_t state) {
 	if (state == 'L') {
-		HAL_GPIO_WritePin(GPIOC, linear_actuator1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(act_clock_GPIO_Port, act_clock_Pin, GPIO_PIN_RESET);
 		HAL_Delay(20);
-		HAL_GPIO_WritePin(GPIOC, linear_actuator2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(act_aclock_GPIO_Port, act_aclock_Pin, GPIO_PIN_SET);
 		HAL_Delay(50);
 	} else if (state == 'U') {
-		HAL_GPIO_WritePin(GPIOC, linear_actuator2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(act_aclock_GPIO_Port, act_aclock_Pin, GPIO_PIN_RESET);
 		HAL_Delay(20);
-		HAL_GPIO_WritePin(GPIOC, linear_actuator1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(act_clock_GPIO_Port, act_clock_Pin, GPIO_PIN_SET);
 		HAL_Delay(50);
 
 	} else if (state == 'S') {
-		HAL_GPIO_WritePin(GPIOC, linear_actuator2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(act_aclock_GPIO_Port, act_aclock_Pin, GPIO_PIN_RESET);
 		HAL_Delay(20);
-		HAL_GPIO_WritePin(GPIOC, linear_actuator1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(act_clock_GPIO_Port, act_clock_Pin, GPIO_PIN_RESET);
 		HAL_Delay(50);
 	}
 
@@ -357,13 +357,13 @@ void move_actuator(uint8_t state) {
 uint8_t actuator_state(void) {
 
 	HAL_Delay(20);
-	return HAL_GPIO_ReadPin(GPIOB, proximity_sensor_Pin);
+	return HAL_GPIO_ReadPin(actuator_sensor_GPIO_Port, actuator_sensor_Pin);
 
 }
 uint8_t door_state(void) {
 
 	HAL_Delay(20);
-	return HAL_GPIO_ReadPin(GPIOB, limit_switch_Pin);
+	return HAL_GPIO_ReadPin(alignment_sensor_GPIO_Port, alignment_sensor_Pin);
 
 }
 void direction(uint8_t dir) {
@@ -599,7 +599,7 @@ void remained_open(void) {
 uint8_t manager_auth(void) {
 
 	HAL_Delay(10);
-	return HAL_GPIO_ReadPin(GPIOA, manager_button_Pin);
+	return HAL_GPIO_ReadPin(master_button_GPIO_Port, master_button_Pin);
 }
 uint8_t countstates(uint8_t states[]) {
 	uint8_t countpos = 0;
@@ -626,13 +626,13 @@ void move_motor(uint8_t dir, uint8_t degree) {
 	while (count < pulses) {
 		if (!rising_flag) {
 
-			if (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5)) {
+			if (HAL_GPIO_ReadPin(wind_GPIO_Port, wind_Pin)) {
 
 				count++;
 				rising_flag = 1;
 			}
 		} else {
-			if (!HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5)) {
+			if (!HAL_GPIO_ReadPin(wind_GPIO_Port, wind_Pin)) {
 
 				rising_flag = 0;
 			}
