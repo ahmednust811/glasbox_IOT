@@ -42,7 +42,7 @@
  TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
- uint32_t count = 0;
+ //uint32_t count = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,11 +72,6 @@ void move_motor(uint8_t, uint8_t);
 #define TOTAL_PULSES 2015
 /* USER CODE END 0 */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
 /**
   * @brief  The application entry point.
   * @retval int
@@ -93,6 +88,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+ // int32_t CH1_DC = 800;
 
   /* USER CODE END Init */
 
@@ -107,39 +103,48 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+  TIM2->CCR2 =800;
+  HAL_Delay(10);
   	initial_system_state();
-  	/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-  	/* Infinite loop */
-  	/* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+
   	while (1) {
+
   		if (HAL_GPIO_ReadPin(door_sensor_GPIO_Port, door_sensor_Pin)) {
   			remained_open();
   		}
-  		/* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
+    /* USER CODE BEGIN 3 */
   		/* USER CODE BEGIN 3 */
-  		uint8_t select_switch = select_system(); // Selection between motion sensor and wind sensor
+  				uint8_t select_switch = select_system(); // Selection between motion sensor and wind sensor
 
-  		switch (select_switch) {
-  		case 1:
+  				switch (select_switch) {
+  				case 1:
+  					TIM2->CCR2 = 900;
+  					normal_state(0);
+  					break;
 
-  			normal_state(0);
-  			break;
+  				case 2:
+  					if (wind_sensor_state()) {
+  						if (!manager_auth()) {
+  							emergency_close();
+  							while (!manager_auth())
+  								;
+  						}
+  					}
+  					normal_state(1);
 
-  		case 2:
-  			if (wind_sensor_state()) {
-  				if (!manager_auth()) {
-  					emergency_close();
-  					while (!manager_auth())
-  						;
+  					break;
   				}
   			}
-  			normal_state(1);
 
-  			break;
-  		}
-  	}
+
+  /* USER CODE END 3 */
 }
 
 /**
@@ -154,10 +159,13 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -167,12 +175,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -198,9 +206,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 71;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 63000;
+  htim2.Init.Period = 999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -224,7 +232,7 @@ static void MX_TIM2_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
@@ -255,11 +263,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, BC_Pin|buzzer_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|act_clock_Pin|act_aclock_Pin|LS1_Pin
-                          |LS2_Pin|FR_Pin|alignment_sensor_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|act_clock_Pin|act_aclock_Pin|FR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, led3_Pin|led2_Pin|led1_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, led3_Pin|led2_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pins : BC_Pin buzzer_Pin */
   GPIO_InitStruct.Pin = BC_Pin|buzzer_Pin;
@@ -268,10 +275,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB0 act_clock_Pin act_aclock_Pin LS1_Pin
-                           LS2_Pin FR_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|act_clock_Pin|act_aclock_Pin|LS1_Pin
-                          |LS2_Pin|FR_Pin;
+  /*Configure GPIO pins : PB0 act_clock_Pin act_aclock_Pin FR_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|act_clock_Pin|act_aclock_Pin|FR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -283,43 +288,30 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : actuator_sensor_Pin */
-  GPIO_InitStruct.Pin = actuator_sensor_Pin;
+  /*Configure GPIO pins : actuator_sensor_Pin alignment_sensor_Pin */
+  GPIO_InitStruct.Pin = actuator_sensor_Pin|alignment_sensor_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(actuator_sensor_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : wind_Pin */
-  GPIO_InitStruct.Pin = wind_Pin;
+  /*Configure GPIO pins : wind_Pin wind_button_Pin */
+  GPIO_InitStruct.Pin = wind_Pin|wind_button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(wind_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : function_switch_Pin door_sensor_Pin */
-  GPIO_InitStruct.Pin = function_switch_Pin|door_sensor_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : master_button_Pin */
-  GPIO_InitStruct.Pin = master_button_Pin;
+  /*Configure GPIO pins : function_switch_Pin door_sensor_Pin master_button_Pin */
+  GPIO_InitStruct.Pin = function_switch_Pin|door_sensor_Pin|master_button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(master_button_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : led3_Pin led2_Pin led1_Pin */
-  GPIO_InitStruct.Pin = led3_Pin|led2_Pin|led1_Pin;
+  /*Configure GPIO pins : led3_Pin led2_Pin */
+  GPIO_InitStruct.Pin = led3_Pin|led2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : alignment_sensor_Pin */
-  GPIO_InitStruct.Pin = alignment_sensor_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(alignment_sensor_GPIO_Port, &GPIO_InitStruct);
 
 }
 
@@ -357,13 +349,13 @@ void move_actuator(uint8_t state) {
 uint8_t actuator_state(void) {
 
 	HAL_Delay(20);
-	return HAL_GPIO_ReadPin(actuator_sensor_GPIO_Port, actuator_sensor_Pin);
+	return !(HAL_GPIO_ReadPin(actuator_sensor_GPIO_Port, actuator_sensor_Pin));
 
 }
 uint8_t door_state(void) {
 
 	HAL_Delay(20);
-	return HAL_GPIO_ReadPin(alignment_sensor_GPIO_Port, alignment_sensor_Pin);
+	return !(HAL_GPIO_ReadPin(alignment_sensor_GPIO_Port, alignment_sensor_Pin));
 
 }
 void direction(uint8_t dir) {
@@ -385,7 +377,7 @@ void brake(uint8_t state) {
 uint8_t wind_sensor_state(void) {
 
 	HAL_Delay(10);
-	return HAL_GPIO_ReadPin(wind_GPIO_Port, wind_Pin);
+	return HAL_GPIO_ReadPin(wind_button_GPIO_Port, wind_button_Pin);
 
 }
 
@@ -426,8 +418,8 @@ void normal_state(uint8_t override) {
 	uint32_t rising_flag = 0;
 	char uart_buf[50];
 	int uart_buf_len;
-	while (!HAL_GPIO_ReadPin(door_sensor_GPIO_Port, door_sensor_Pin)) {
-
+ 	while (!HAL_GPIO_ReadPin(door_sensor_GPIO_Port, door_sensor_Pin)) {
+ 		TIM2->CCR2 = 900;
 		if (person_present('F') && (!HAL_GPIO_ReadPin(button_motion_out_GPIO_Port, button_motion_out_Pin))) {
 			if (actuator_state()) {
 				move_actuator('U');
@@ -443,8 +435,13 @@ void normal_state(uint8_t override) {
 			move_motor('O', 90);
 			HAL_Delay(5000);
 			direction('C');
+
+
 			brake(0);
-			while (!door_state()) {
+			HAL_Delay(1500);
+			TIM2->CCR2 =400;
+			HAL_Delay(500);
+			while (!door_state()) {HAL_Delay(5);}/*{
 				if (!rising_flag) {
 
 					if (HAL_GPIO_ReadPin(wind_GPIO_Port, wind_Pin)) {
@@ -493,7 +490,7 @@ void normal_state(uint8_t override) {
 				}
 
 				//direction('C');
-			}
+			}*/
 			brake(1);
 			if (door_state() && (!override)) {
 
@@ -516,11 +513,12 @@ void normal_state(uint8_t override) {
 					}
 					direction('O');
 					brake(0);
-					HAL_Delay(15000);
-					brake(1);
+					move_motor('O', 90);
 					HAL_Delay(5000);
 					direction('C');
 					brake(0);
+					HAL_Delay(2000);
+					TIM2->CCR2 =200 ;
 					while (!door_state()) {
 						HAL_Delay(50);
 					}
@@ -554,6 +552,8 @@ void emergency_close(void) {
 		}
 		direction('C');
 		brake(0);
+		HAL_Delay(2000);
+		TIM2->CCR2 =200 ;
 		while (!door_state()) {
 			HAL_Delay(20);
 		}
@@ -577,14 +577,17 @@ void remained_open(void) {
 			move_actuator('S');
 		}
 		brake(0);
-		direction('O');
-		HAL_Delay(17000);
-		brake(1);
+		move_motor('O', 90);
+		//brake(1);
 		while (HAL_GPIO_ReadPin(door_sensor_GPIO_Port, door_sensor_Pin)) {
 			HAL_Delay(50);
 		}
-		direction('C');
+		//direction('C');
+		//brake(0);
+		//HAL_Delay(2000);
+		move_motor('C',100);
 		brake(0);
+		TIM2->CCR2 =200 ;
 		while (!door_state()) {
 			HAL_Delay(50);
 		}
@@ -617,12 +620,11 @@ void move_motor(uint8_t dir, uint8_t degree) {
 	char uart_buf[50];
 	int uart_buf_len;
 	uint32_t rising_flag = 0;
-	//uint32_t count= 0;
+	uint32_t count= 0;
 	uint32_t pulses = 0;
 	pulses = (degree * TOTAL_PULSES) / 360;
 	direction(dir);
 	brake(0);
-
 	while (count < pulses) {
 		if (!rising_flag) {
 
@@ -648,6 +650,7 @@ void move_motor(uint8_t dir, uint8_t degree) {
 	brake(1);
 }
 /* USER CODE END 4 */
+
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
